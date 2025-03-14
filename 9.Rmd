@@ -1,0 +1,39 @@
+---
+title: "Non-Parametric Statistics - Problem Sets"
+author: "Silvana, Florencia Luque, Simon Schmetz"
+date: "2025-03-14"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+# Introduction
+
+In the following document, the solutions to three problem sets from Prof. Eduardo García-Portugués book on nonparametric Statistics (https://bookdown.org/egarpor/NP-UC3M/) as final assignment for the Course in Nonparametric Statistics at Universidad Carlos III de Madrid. 
+*Contributions made to this document are made are equal among each of the three authors*
+
+
+# Excercise 4.21
+
+
+```{r cars}
+#TODO: Silvana
+```
+
+
+# Excercises 5.10 
+
+```{r}
+#TODO: Flo
+```
+
+# Excercise 6.8
+
+```{r}
+#TODO: Simon
+```
+
+
