@@ -61,7 +61,75 @@ x_grid = seq(-5,5,by=0.1)
 # Excercise 6.8
 
 ```{r}
-#TODO: Simon
+library(goftest)
+library(nortest)
+library(latex2exp)
+```
+
+
+```{r}
+
+# Function for Simulation of p-values
+simulate_pvalues <- function(mu_samp=0, sd_samp=1 , M, n, alpha, dist = "normal") {
+
+  # generate p-Values for samples from Normal
+  pvalues <- sapply(1:M, function(i) {
+    
+    if(dist == "normal"){
+      x = rnorm(n, mean = mu_samp, sd = sd_samp)
+    }
+
+    if(dist == "t-students"){
+      x = rt(n, df = 10, ncp = mu_samp)
+    }
+    
+    pval_ks = ks.test(x, "pnorm", mean = 0, sd = 1)$p.value
+    pval_cvm = goftest::cvm.test(x = x, null = "pnorm")$p.value
+    pval_ad = goftest::ad.test(x = x, null = "pnorm")$p.value
+    return(c(pval_ks, pval_ad, pval_cvm))
+  })
+  
+  # get rejection rates
+  ks_rejection_rate = sum(pvalues[1,] < alpha) / M
+  cvm_rejection_rate = sum(pvalues[2,] < alpha) / M
+  ad_rejection_rate = sum(pvalues[3,] < alpha) / M
+  
+  # plot
+  par(mfrow = c(1, 3))
+  hist(pvalues[1,], breaks = seq(0, 1, l = 20), probability = TRUE,
+       main = paste("Kolmogorov-Smirnov", "\nRejection Rate:", round(ks_rejection_rate, 2)), ylim = c(0, 10))
+  abline(h = 1, col = "red")
+  
+  hist(pvalues[2,], breaks = seq(0, 1, l = 20), probability = TRUE,
+       main = paste("Cramer von Mises", "\nRejection Rate:", round(cvm_rejection_rate, 2)), ylim = c(0, 10))
+  abline(h = 1, col = "red")
+  
+  hist(pvalues[3,], breaks = seq(0, 1, l = 20), probability = TRUE,
+       main = paste("Anderson-Darling", "\nRejection Rate:", round(ad_rejection_rate, 2)), ylim = c(0, 10))
+  abline(h = 1, col = "red")
+}
+
+
+```
+
+```{r}
+# H0 True
+set.seed(123)
+simulate_pvalues(mu_samp = 0, sd_samp = 1, M = 1000, n = 25, alpha = 0.05)
+simulate_pvalues(mu_samp = 0, sd_samp = 1, M = 1000, n = 25, alpha = 0.1)
+simulate_pvalues(mu_samp = 0, sd_samp = 1, M = 1000, n = 100, alpha = 0.1)
+
+```
+```{r}
+# H0 False
+simulate_pvalues(mu_samp = 0.25, sd_samp = 1, M = 1000, n = 25, alpha = 0.05)
+simulate_pvalues(mu_samp = 0.25, sd_samp = 1, M = 1000, n = 50, alpha = 0.05)
+simulate_pvalues(mu_samp = 0.50, sd_samp = 1, M = 1000, n = 25, alpha = 0.05)
+```
+
+```{r}
+# 
+simulate_pvalues(mu_samp = 0,M = 1000, n = 50, alpha = 0.5, dist = "t-students")
 ```
 
 
