@@ -12,7 +12,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Introduction
 
-In the following document, the solutions to three problem sets from Prof. Eduardo García-Portugués book on nonparametric Statistics (https://bookdown.org/egarpor/NP-UC3M/) as final assignment for the Course in Nonparametric Statistics at Universidad Carlos III de Madrid. 
+In the following document, the solutions to three problem sets from Prof. Eduardo García\-Portugués book on nonparametric Statistics (https://bookdown.org/egarpor/NP-UC3M/) as final assignment for the Course in Nonparametric Statistics at Universidad Carlos III de Madrid. 
 *Contributions made to this document are made are equal among each of the three authors*
 
 
@@ -25,11 +25,39 @@ In the following document, the solutions to three problem sets from Prof. Eduard
 
 
 # Excercises 5.10 
+Investigate the accuracy of the naive bootstrap confidence intervals implemented in *np::npplot*. To do so:
 
-```{r}
-#TODO: Flo
+1. Simulate $M=500$ samples of size $n =100$ from the regression model $Y=m(X)+\varepsilon$, where $m(x)=0.25x^{2}-0.75x+3$, $X\sim N(0,1.5^{2})$, and $\varepsilon \sim N(0,0.75^{2})$.
+
+```{r,warning=FALSE}
+library(np)
+set.seed(1234)
+M = 500
+n = 100
+y_muestras = matrix(0,ncol = n,nrow = M)
+m = function(a){
+  0.25*a^2-0.75*a+3
+}
+for (i in 1:500){
+  x = rnorm(100,0,1.5)
+  epsilon = rnorm(100,0,0.75)
+  y_muestras[i,] = m(x)+epsilon
+}
 ```
 
+2. Compute the 95\% confidence intervals for $m(x)$  along $x\gets seq(-5, 5, by = 0.1)$, for each of the  M  samples. Do it for the normal approximation and quantile-based confidence intervals.
+```{r}
+x_grid = seq(-5,5,by=0.1)
+
+```
+3. Check if  $m(x)$  belongs to each of the confidence intervals, for each  x.
+```{r}
+
+```
+4. Approximate the actual coverage of the confidence intervals.
+```{r}
+
+```
 # Excercise 6.8
 
 ```{r}
