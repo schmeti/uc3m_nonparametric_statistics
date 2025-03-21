@@ -223,17 +223,17 @@ colMeans(results)
 ```
 
 The average of the mean square error of the local linear fit is slightly higher than the local constant fit. It can be related with the behavior for small values of the area, where no trend is is seen.
-
 # Excercises 5.10 
 Investigate the accuracy of the naive bootstrap confidence intervals implemented in *np::npplot*. To do so:
 
 1. Simulate $M=500$ samples of size $n =100$ from the regression model $Y=m(X)+\varepsilon$, where $m(x)=0.25x^{2}-0.75x+3$, $X\sim N(0,1.5^{2})$, and $\varepsilon \sim N(0,0.75^{2})$.
 
-```{r,warning=FALSE}
+```{r,warning=FALSE,message=FALSE}
 library(np)
 set.seed(1234)
 M = 500
 n = 100
+x_m = matrix(0,ncol = n,nrow = M)
 y_muestras = matrix(0,ncol = n,nrow = M)
 m = function(a){
   0.25*a^2-0.75*a+3
@@ -242,22 +242,290 @@ for (i in 1:500){
   x = rnorm(100,0,1.5)
   epsilon = rnorm(100,0,0.75)
   y_muestras[i,] = m(x)+epsilon
+  x_m[i,] = x
 }
 ```
 
 2. Compute the 95\% confidence intervals for $m(x)$  along $x\gets seq(-5, 5, by = 0.1)$, for each of the  M  samples. Do it for the normal approximation and quantile-based confidence intervals.
+**Solution:**
+Using the function to estimate the interval from the book we are applying this for each sample and calculate the CI for each of those.
 ```{r}
 x_grid = seq(-5,5,by=0.1)
+np_pred_CI <- function(npfit, exdat, B = 200, conf = 0.95,
+                       type_CI = c("standard", "quantiles")[1]) {
+  # Extract predictors
+  xdat <- npfit$eval
+  # Extract response, using a trick from np::npplot.rbandwidth
+  tt <- terms(npfit$bws)
+  tmf <- npfit$bws$call[c(1, match(c("formula", "data"),
+                                   names(npfit$bws$call)))]
+  tmf[[1]] <- as.name("model.frame")
+  tmf[["formula"]] <- tt
+  tmf <- eval(tmf, envir = environment(tt))
+  ydat <- model.response(tmf)
+  # Predictions
+  m_hat <- np::npreg(txdat = xdat, tydat = ydat, exdat = exdat,
+                     bws = npfit$bws)$mean
+
+  # Function for performing Step 3
+  boot_function <- function(data, indices) {
+
+    np::npreg(txdat = xdat[indices,], tydat = ydat[indices],
+              exdat = exdat, bws = npfit$bws)$mean
+
+  }
+  # Carry out Step 3
+  m_hat_star <- boot::boot(data = data.frame(xdat), statistic = boot_function,
+                           R = B)$t
+  # Confidence intervals
+  alpha <- 1 - conf
+  if (type_CI == "standard") {
+
+    z <- qnorm(p = 1 - alpha / 2)
+    se <- apply(m_hat_star, 2, sd)
+    lwr <- m_hat - z * se
+    upr <- m_hat + z * se
+
+  } else if (type_CI == "quantiles") {
+
+    q <- apply(m_hat_star, 2, quantile, probs = c(alpha / 2, 1 - alpha / 2))
+    lwr <- q[1, ]
+    upr <- q[2, ]
+
+  } else {
+
+    stop("Incorrect type_CI")
+
+  }
+  # Return evaluation points, estimates, and confidence intervals
+  return(data.frame("exdat" = exdat, "m_hat" = m_hat, "lwr" = lwr, "upr" = upr))
+
+}
+```
+Now with the function for calculate CI normal and quantile we create a matrix to save the values for the interval of each sample.
+```{r}
+set.seed(42234)
+# Storage
+normal_ci_up = matrix(NA, nrow= M,ncol =  length(x_grid))
+normal_ci_low = matrix(NA, nrow= M,ncol =  length(x_grid))
+m_hat_normal = matrix(NA, nrow = M, ncol = length(x_grid))
+
+for (i in 1:M) {
+  # Fit nonparametric regression to give to the funciton
+  np_fit <- npreg(bws = npregbw(y_muestras[i,] ~ x_m[i,]), gradients = FALSE)
+  
+  # Compute CI using function first for normal CI
+  ci_normal_result = np_pred_CI(np_fit, exdat = x_grid, B = 50, type_CI = "standard")
+  
+  m_hat_normal[i,] = ci_normal_result$m_hat
+  normal_ci_up[i,] = ci_normal_result$upr 
+  normal_ci_low[i,] = ci_normal_result$lwr
+}
 
 ```
-3. Check if  $m(x)$  belongs to each of the confidence intervals, for each  x.
+Create CI with quantile formula.
+
 ```{r}
+set.seed(42234)
+# Storage
+quantile_ci_up = matrix(NA, ncol = length(x_grid),nrow =  M)
+quantile_ci_low = matrix(NA, ncol = length(x_grid),nrow =  M)
+m_hat_quantile <- matrix(NA, ncol = length(x_grid), nrow = M)
+
+for (i in 1:M) {
+  # Fit nonparametric regression to give to the funciton
+  np_fit <- npreg(bws = npregbw(y_muestras[i,] ~ x_m[i,]), gradients = FALSE)
+  
+  # Compute CI using function first for normal CI
+  ci_normal_result = np_pred_CI(np_fit, exdat = x_grid, B = 50, type_CI = "quantiles")
+  
+  m_hat_quantile[i,] = ci_normal_result$m_hat
+  quantile_ci_up[i,] = ci_normal_result$upr 
+  quantile_ci_low[i,] = ci_normal_result$lwr
+}
+
+```
+ 3. Check if  $m(x)$  belongs to each of the confidence intervals, for each  x. 
+**Solution:**
+
+To check if $m(x)$ belongs to each confidence intervals we need to see if $m(x)$ belongs to each sample. Then the save value is going to be true if belong and false if it doesn't.
+```{r}
+belong_normal = matrix(NA,ncol = length(x_grid), nrow = M)
+belong_quantile = matrix(NA,ncol = length(x_grid), nrow = M)
+m.x = sapply(x_grid,FUN = m)
+
+for (i in 1:M){
+  for (j in 1:length(x_grid)){
+    if (m.x[j]>=normal_ci_low[i,j] & m.x[j] <= normal_ci_up[i,j]){
+      belong_normal[i,j] = TRUE
+    }
+    else{
+      belong_normal[i,j] = FALSE
+    }
+    if (m.x[j]>=quantile_ci_low[i,j] & m.x[j] <= quantile_ci_up[i,j]){
+      belong_quantile[i,j] = TRUE
+    }
+    else{
+      belong_quantile[i,j] = FALSE
+    }
+  }
+}
 
 ```
 4. Approximate the actual coverage of the confidence intervals.
+**Solution:**
+To estimate the coverage we are calculating the % of belonging of $m(x)$ for each sample and the do the mean of this value. We can do this apply mean by row because the data is boolean.
 ```{r}
+coverage.normal = apply(belong_normal, 1, mean)
+coverage.quantile = apply(belong_quantile, 1, mean)
+cat("the mean coverage of the normal CI is :",mean(coverage.normal),"and ","the mean coverage of the quantile CI is :",mean(coverage.quantile))
+```
+```{r} 
+#n = 200
+set.seed(1234)
+n2 = 200
+x_m2 = matrix(0,ncol = n2,nrow = M)
+y_muestras2 = matrix(0,ncol = n2,nrow = M)
+for (i in 1:500){
+  x = rnorm(n2,0,1.5)
+  epsilon = rnorm(n2,0,0.75)
+  y_muestras2[i,] = m(x)+epsilon
+  x_m2[i,] = x
+}
+
+# Storage
+normal_ci_up2 = matrix(NA, nrow= M,ncol =  length(x_grid))
+normal_ci_low2 = matrix(NA, nrow= M,ncol =  length(x_grid))
+m_hat_normal2 = matrix(NA, nrow = M, ncol = length(x_grid))
+
+for (i in 1:M) {
+  # Fit nonparametric regression to give to the funciton
+  np_fit <- npreg(bws = npregbw(y_muestras2[i,] ~ x_m2[i,]), gradients = FALSE)
+  
+  # Compute CI using function first for normal CI
+  ci_normal_result2 = np_pred_CI(np_fit, exdat = x_grid, B = 500, type_CI = "standard")
+  
+  m_hat_normal2[i,] = ci_normal_result2$m_hat
+  normal_ci_up2[i,] = ci_normal_result2$upr 
+  normal_ci_low2[i,] = ci_normal_result2$lwr
+}
+
+quantile_ci_up2 = matrix(NA, ncol = length(x_grid),nrow =  M)
+quantile_ci_low2 = matrix(NA, ncol = length(x_grid),nrow =  M)
+m_hat_quantile2 <- matrix(NA, ncol = length(x_grid), nrow = M)
+
+for (i in 1:M) {
+  # Fit nonparametric regression to give to the funciton
+  np_fit <- npreg(bws = npregbw(y_muestras2[i,] ~ x_m2[i,]), gradients = FALSE)
+  
+  # Compute CI using function first for normal CI
+  ci_normal_result2 = np_pred_CI(np_fit, exdat = x_grid, B = 50, type_CI = "quantiles")
+  
+  m_hat_quantile2[i,] = ci_normal_result2$m_hat
+  quantile_ci_up2[i,] = ci_normal_result2$upr 
+  quantile_ci_low2[i,] = ci_normal_result2$lwr
+}
+
+belong_normal2 = matrix(NA,ncol = length(x_grid), nrow = M)
+belong_quantile2 = matrix(NA,ncol = length(x_grid), nrow = M)
+m.x2 = sapply(x_grid,FUN = m)
+
+for (i in 1:M){
+  for (j in 1:length(x_grid)){
+    if (m.x2[j]>=normal_ci_low2[i,j] & m.x2[j] <= normal_ci_up2[i,j]){
+      belong_normal2[i,j] = TRUE
+    }
+    else{
+      belong_normal2[i,j] = FALSE
+    }
+    if (m.x2[j]>=quantile_ci_low2[i,j] & m.x2[j] <= quantile_ci_up2[i,j]){
+      belong_quantile2[i,j] = TRUE
+    }
+    else{
+      belong_quantile2[i,j] = FALSE
+    }
+  }
+}
+coverage.normal2 = apply(belong_normal2, 1, mean)
+coverage.quantile2 = apply(belong_quantile2, 1, mean)
+cat("the mean coverage of the normal CI is :",mean(coverage.normal2),"and ","the mean coverage of the quantile CI is :",mean(coverage.quantile2))
 
 ```
+
+```{r} 
+#n = 500
+set.seed(1234)
+n3 = 500
+x_m3 = matrix(0,ncol = n3,nrow = M)
+y_muestras3 = matrix(0,ncol = n3,nrow = M)
+for (i in 1:500){
+  x = rnorm(n3,0,1.5)
+  epsilon = rnorm(n3,0,0.75)
+  y_muestras3[i,] = m(x)+epsilon
+  x_m3[i,] = x
+}
+
+# Storage
+normal_ci_up3 = matrix(NA, nrow= M,ncol =  length(x_grid))
+normal_ci_low3 = matrix(NA, nrow= M,ncol =  length(x_grid))
+m_hat_normal3 = matrix(NA, nrow = M, ncol = length(x_grid))
+
+for (i in 1:M) {
+  # Fit nonparametric regression to give to the funciton
+  np_fit <- npreg(bws = npregbw(y_muestras3[i,] ~ x_m3[i,]), gradients = FALSE)
+  
+  # Compute CI using function first for normal CI
+  ci_normal_result3 = np_pred_CI(np_fit, exdat = x_grid, B = 50, type_CI = "standard")
+  
+  m_hat_normal3[i,] = ci_normal_result3$m_hat
+  normal_ci_up3[i,] = ci_normal_result3$upr 
+  normal_ci_low3[i,] = ci_normal_result3$lwr
+}
+
+quantile_ci_up3 = matrix(NA, ncol = length(x_grid),nrow =  M)
+quantile_ci_low3 = matrix(NA, ncol = length(x_grid),nrow =  M)
+m_hat_quantile3 <- matrix(NA, ncol = length(x_grid), nrow = M)
+
+for (i in 1:M) {
+  # Fit nonparametric regression to give to the funciton
+  np_fit <- npreg(bws = npregbw(y_muestras3[i,] ~ x_m3[i,]), gradients = FALSE)
+  
+  # Compute CI using function first for normal CI
+  ci_normal_result3 = np_pred_CI(np_fit, exdat = x_grid, B = 50, type_CI = "quantiles")
+  
+  m_hat_quantile3[i,] = ci_normal_result3$m_hat
+  quantile_ci_up3[i,] = ci_normal_result3$upr 
+  quantile_ci_low3[i,] = ci_normal_result3$lwr
+}
+
+belong_normal3 = matrix(NA,ncol = length(x_grid), nrow = M)
+belong_quantile3 = matrix(NA,ncol = length(x_grid), nrow = M)
+m.x3 = sapply(x_grid,FUN = m)
+
+for (i in 1:M){
+  for (j in 1:length(x_grid)){
+    if (m.x3[j]>=normal_ci_low3[i,j] & m.x3[j] <= normal_ci_up3[i,j]){
+      belong_normal3[i,j] = TRUE
+    }
+    else{
+      belong_normal3[i,j] = FALSE
+    }
+    if (m.x3[j]>=quantile_ci_low3[i,j] & m.x3[j] <= quantile_ci_up3[i,j]){
+      belong_quantile3[i,j] = TRUE
+    }
+    else{
+      belong_quantile3[i,j] = FALSE
+    }
+  }
+}
+
+coverage.normal3 = apply(belong_normal3, 1, mean)
+coverage.quantile3 = apply(belong_quantile3, 1, mean)
+cat("the mean coverage of the normal CI is :",mean(coverage.normal3),"and ","the mean coverage of the quantile CI is :",mean(coverage.quantile3))
+```
+ conclusion: falta
+ when you increase the number in the n the covarege...
+
 # Excercise 6.8
 
 The following exercise revolves around the comparison of power between the three nonparametric normality tests:
