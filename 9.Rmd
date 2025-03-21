@@ -54,6 +54,8 @@ data_23 <- sunspots_births %>% filter(cycle==23)
 
 Inspect the graphical relation between dist_sun_disc (response) and log10(total_area + 1) (predictor).
 
+In the solar cycle 23, we see that for small group areas, there is not a clear relation with the distance from the center of the Sun´s disc. But as the area is being wider, the distance achieve the length of the solar radius.
+
 ```{r}
 # Inspect the graphical relation between dist_sun_disc (response) and log10(total_area + 1) (predictor).
 plot(log10(data_23$total_area + 1), data_23$dist_sun_disc, 
@@ -64,7 +66,6 @@ rug(data_23$dist_sun_disc, side = 2)
 
 ```
 
-In the solar cycle 23, we see that for small group areas, there is not a clear relation with the distance from the center of the Sun´s disc. But as the area is being wider, the distance achieve the length of the solar radius.
 
 ## c)
 
@@ -80,6 +81,10 @@ cat( "CV bandwidth for the LLE:",bw1$bw)
 
 Compute and plot the local linear estimator using CV bandwidth. Comment on the fit.
 
+The local linear fit shows a higher slope for middle values of the area, and have a behavior near to a constant function with large values of the area. That means, that specially for large values of the area is doing a good job. 
+
+Also, as commented before, for small values of the area there is not an evident relation, so it woul be difficult to find a fit that takes that into account.
+
 ```{r message=FALSE}
 kre1 <- np::npreg(bws = bw1)
 
@@ -90,10 +95,6 @@ rug(log10(data_23$total_area + 1), side = 1)
 rug(data_23$dist_sun_disc, side = 2)
 ```
 
-The local linear fit shows a higher slope for middle values of the area, and have a behavior near to a constant function with large values of the area. That means, that specially for large values of the area is doing a good job. 
-
-Also, as commented before, for small values of the area there is not an evident relation, so it woul be difficult to find a fit that takes that into account.
-
 
 ## e)
 
@@ -102,7 +103,9 @@ Plot the local linear fits for the 23rd, 22nd, and 21st solar cycles. Do they ha
 ```{r}
 data_21 <- sunspots_births %>% filter(cycle == 21)
 data_22 <- sunspots_births %>% filter(cycle == 22)
+```
 
+```{r eval=FALSE}
 bw1_21 <- np::npregbw(formula = dist_sun_disc ~ log10(total_area + 1), 
                       data = data_21, regtype = "ll")
 bw1_22 <- np::npregbw(formula = dist_sun_disc ~ log10(total_area + 1),
@@ -110,6 +113,14 @@ bw1_22 <- np::npregbw(formula = dist_sun_disc ~ log10(total_area + 1),
 
 kre1_21 <- np::npreg(bws = bw1_21)
 kre1_22 <- np::npreg(bws = bw1_22)
+
+kre1_21 %>% saveRDS("kre1_21.RDS")
+kre1_22 %>% saveRDS("kre1_22.RDS")
+```
+
+```{r}
+kre1_21 <- readRDS("kre1_21.RDS")
+kre1_22 <- readRDS("kre1_22.RDS")
 
 # Extract x-values and fitted values for manual plotting
 x_21 <- log10(data_21$total_area + 1)
@@ -151,7 +162,7 @@ Yes, all of the three fits starts at 0 for those who does not have area, then ha
 
 Randomly split the dataset for the 23rd cycle into a training sample (80\%) and testing sample (20\%). Repeat  10 times these random splits. Then, compare the average mean square errors of the predictions by the local constant and local linear estimators with CV bandwidths. Comment on the results.
 
-```{r warning=FALSE, message=FALSE}
+```{r warning=FALSE, message=FALSE, eval=FALSE}
 library(tidymodels)
 
 bw0_c23 <- numeric(10)
@@ -168,8 +179,7 @@ for (i in 1:10) {
   
   # Train-Test Split
   set.seed(934 + i)
-  sunspot_split <- initial_split(data_23, prop = 0.80,
-                                 strata = dist_sun_disc)
+  sunspot_split <- initial_split(data_23, prop = 0.80, strata = dist_sun_disc)
   training_sunspot <- training(sunspot_split)
   testing_sunspot <- testing(sunspot_split)
   
@@ -203,26 +213,16 @@ for (i in 1:10) {
   MSE1_c23[i]<- mean((testing_sunspot$dist_sun_disc - pred_LL)^2)
 }
 
+results<- data.frame(LC_MSE = MSE0_c23, LL_MSE = MSE1_c23)
+results %>% saveRDS("MSE_LL_LC.RDS")
 ```
+
 ```{r}
-mean(MSE0_c23)
-mean(MSE1_c23)
+results <- readRDS("MSE_LL_LC.RDS")
+colMeans(results)
 ```
 
 The average of the mean square error of the local linear fit is slightly higher than the local constant fit. It can be related with the behavior for small values of the area, where no trend is is seen.
-
-```{r}
-results_df <- data.frame(
-  Iteration = 1:10,
-  Bandwidth_LCE = bw0_c23,
-  Bandwidth_LLE = bw1_c23,
-  MSE_LCE = MSE0_c23,
-  MSE_LLE = MSE1_c23
-)
-
-print(results_df)
-
-```
 
 # Excercises 5.10 
 Investigate the accuracy of the naive bootstrap confidence intervals implemented in *np::npplot*. To do so:
@@ -272,7 +272,7 @@ $H_0: X \sim N(0,1)$ vs $H_1: X \not\sim N(0,1)$
 
 The comparison is performed by performing these tests $M$ times for samples of size $n$ from a chosen normal or t-student's and comparing the distribution of the resulting $M$ p-values the corresponding rejection rate for significance level $\alpha$.
 
-```{r}
+```{r warning=FALSE, message=FALSE}
 # Load Libraries Required for Excercises 
 library(goftest)
 library(nortest)
