@@ -315,7 +315,7 @@ for (i in 1:M) {
   np_fit <- npreg(bws = npregbw(y_muestras[i,] ~ x_m[i,]), gradients = FALSE)
   
   # Compute CI using function first for normal CI
-  ci_normal_result = np_pred_CI(np_fit, exdat = x_grid, B = 50, type_CI = "standard")
+  ci_normal_result = np_pred_CI(np_fit, exdat = x_grid, B = 500, type_CI = "standard")
   
   m_hat_normal[i,] = ci_normal_result$m_hat
   normal_ci_up[i,] = ci_normal_result$upr 
@@ -337,7 +337,7 @@ for (i in 1:M) {
   np_fit <- npreg(bws = npregbw(y_muestras[i,] ~ x_m[i,]), gradients = FALSE)
   
   # Compute CI using function first for normal CI
-  ci_normal_result = np_pred_CI(np_fit, exdat = x_grid, B = 50, type_CI = "quantiles")
+  ci_normal_result = np_pred_CI(np_fit, exdat = x_grid, B = 500, type_CI = "quantiles")
   
   m_hat_quantile[i,] = ci_normal_result$m_hat
   quantile_ci_up[i,] = ci_normal_result$upr 
@@ -419,7 +419,7 @@ for (i in 1:M) {
   np_fit <- npreg(bws = npregbw(y_muestras2[i,] ~ x_m2[i,]), gradients = FALSE)
   
   # Compute CI using function first for normal CI
-  ci_normal_result2 = np_pred_CI(np_fit, exdat = x_grid, B = 50, type_CI = "quantiles")
+  ci_normal_result2 = np_pred_CI(np_fit, exdat = x_grid, B = 500, type_CI = "quantiles")
   
   m_hat_quantile2[i,] = ci_normal_result2$m_hat
   quantile_ci_up2[i,] = ci_normal_result2$upr 
@@ -475,7 +475,7 @@ for (i in 1:M) {
   np_fit <- npreg(bws = npregbw(y_muestras3[i,] ~ x_m3[i,]), gradients = FALSE)
   
   # Compute CI using function first for normal CI
-  ci_normal_result3 = np_pred_CI(np_fit, exdat = x_grid, B = 50, type_CI = "standard")
+  ci_normal_result3 = np_pred_CI(np_fit, exdat = x_grid, B = 500, type_CI = "standard")
   
   m_hat_normal3[i,] = ci_normal_result3$m_hat
   normal_ci_up3[i,] = ci_normal_result3$upr 
@@ -491,12 +491,19 @@ for (i in 1:M) {
   np_fit <- npreg(bws = npregbw(y_muestras3[i,] ~ x_m3[i,]), gradients = FALSE)
   
   # Compute CI using function first for normal CI
-  ci_normal_result3 = np_pred_CI(np_fit, exdat = x_grid, B = 50, type_CI = "quantiles")
+  ci_normal_result3 = np_pred_CI(np_fit, exdat = x_grid, B = 500, type_CI = "quantiles")
   
   m_hat_quantile3[i,] = ci_normal_result3$m_hat
   quantile_ci_up3[i,] = ci_normal_result3$upr 
   quantile_ci_low3[i,] = ci_normal_result3$lwr
 }
+```
+
+```{r}
+#normal_ci_low3 = readRDS("normal_ci_low3.RDS")
+#normal_ci_up3 = readRDS("normal_ci_up3.RDS")
+#quantile_ci_low3 = readRDS("quantile_ci_low3.RDS")
+#quantile_ci_up3 = readRDS("quantile_ci_low3.RDS")
 
 belong_normal3 = matrix(NA,ncol = length(x_grid), nrow = M)
 belong_quantile3 = matrix(NA,ncol = length(x_grid), nrow = M)
@@ -522,9 +529,35 @@ for (i in 1:M){
 coverage.normal3 = apply(belong_normal3, 1, mean)
 coverage.quantile3 = apply(belong_quantile3, 1, mean)
 cat("the mean coverage of the normal CI is :",mean(coverage.normal3),"and ","the mean coverage of the quantile CI is :",mean(coverage.quantile3))
+
+
 ```
- conclusion: falta
- when you increase the number in the n the covarege...
+When you increase the number in the n the covarege increase almost 5\% in each time. This is because having a large sample increase the knowlege in the population given a better CI. Also the Normal CI have a larger coverage for the central limit theorem and this would increase just by increasing the sample size.
+
+
+```{r eval=FALSE}
+ci_normal_result %>% saveRDS("ci_normal_result.RDS")
+ci_normal_result2 %>% saveRDS("ci_normal_result2.RDS")
+ci_normal_result3 %>% saveRDS("ci_normal_result3.RDS")
+m_hat_normal %>% saveRDS("m_hat_normal.RDS")
+m_hat_normal2 %>% saveRDS("m_hat_normal2.RDS")
+m_hat_normal3 %>% saveRDS("m_hat_normal3.RDS")
+m_hat_quantile %>% saveRDS("m_hat_quantile.RDS")
+m_hat_quantile2 %>% saveRDS("m_hat_quantile2.RDS")
+m_hat_quantile3 %>% saveRDS("m_hat_quantile3.RDS")
+normal_ci_low %>% saveRDS("normal_ci_low.RDS")
+normal_ci_low2 %>% saveRDS("normal_ci_low2.RDS")
+normal_ci_low3 %>% saveRDS("normal_ci_low3.RDS")
+normal_ci_up %>% saveRDS("normal_ci_up.RDS")
+normal_ci_up2 %>% saveRDS("normal_ci_up2.RDS")
+normal_ci_up3 %>% saveRDS("normal_ci_up3.RDS")
+quantile_ci_low %>% saveRDS("quantile_ci_low.RDS")
+quantile_ci_low2 %>% saveRDS("quantile_ci_low2.RDS")
+quantile_ci_low3 %>% saveRDS("quantile_ci_low3.RDS")
+quantile_ci_up %>% saveRDS("quantile_ci_up.RDS")
+quantile_ci_up2 %>% saveRDS("quantile_ci_up2.RDS")
+quantile_ci_up3 %>% saveRDS("quantile_ci_up3.RDS")
+```
 
 # Excercise 6.8
 
