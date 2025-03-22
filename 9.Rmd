@@ -303,7 +303,7 @@ np_pred_CI <- function(npfit, exdat, B = 200, conf = 0.95,
 }
 ```
 Now with the function for calculate CI normal and quantile we create a matrix to save the values for the interval of each sample.
-```{r}
+```{r eval=FALSE}
 set.seed(42234)
 # Storage
 normal_ci_up = matrix(NA, nrow= M,ncol =  length(x_grid))
@@ -325,7 +325,7 @@ for (i in 1:M) {
 ```
 Create CI with quantile formula.
 
-```{r}
+```{r eval=FALSE}
 set.seed(42234)
 # Storage
 quantile_ci_up = matrix(NA, ncol = length(x_grid),nrow =  M)
@@ -345,6 +345,15 @@ for (i in 1:M) {
 }
 
 ```
+```{r}
+normal_ci_low = readRDS("normal_ci_low.RDS")
+normal_ci_up = readRDS("normal_ci_up.RDS")
+quantile_ci_low = readRDS("quantile_ci_low.RDS")
+quantile_ci_up = readRDS("quantile_ci_low.RDS")
+
+```
+
+
  3. Check if  $m(x)$  belongs to each of the confidence intervals, for each  x. 
 **Solution:**
 
@@ -378,7 +387,8 @@ To estimate the coverage we are calculating the % of belonging of $m(x)$ for eac
 ```{r}
 coverage.normal = apply(belong_normal, 1, mean)
 coverage.quantile = apply(belong_quantile, 1, mean)
-cat("the mean coverage of the normal CI is :",mean(coverage.normal),"and ","the mean coverage of the quantile CI is :",mean(coverage.quantile))
+cat("the mean coverage of the normal CI is :",mean(coverage.normal))
+cat("the mean coverage of the quantile CI is:",mean(coverage.quantile))
 ```
 ```{r} 
 #n = 200
@@ -392,7 +402,9 @@ for (i in 1:500){
   y_muestras2[i,] = m(x)+epsilon
   x_m2[i,] = x
 }
+```
 
+```{r eval=FALSE}
 # Storage
 normal_ci_up2 = matrix(NA, nrow= M,ncol =  length(x_grid))
 normal_ci_low2 = matrix(NA, nrow= M,ncol =  length(x_grid))
@@ -426,6 +438,19 @@ for (i in 1:M) {
   quantile_ci_low2[i,] = ci_normal_result2$lwr
 }
 
+```
+
+```{r}
+normal_ci_low2 = readRDS("normal_ci_low2.RDS")
+normal_ci_up2 = readRDS("normal_ci_up2.RDS")
+quantile_ci_low2 = readRDS("quantile_ci_low2.RDS")
+quantile_ci_up2 = readRDS("quantile_ci_low2.RDS")
+
+```
+
+
+```{r}
+
 belong_normal2 = matrix(NA,ncol = length(x_grid), nrow = M)
 belong_quantile2 = matrix(NA,ncol = length(x_grid), nrow = M)
 m.x2 = sapply(x_grid,FUN = m)
@@ -448,7 +473,8 @@ for (i in 1:M){
 }
 coverage.normal2 = apply(belong_normal2, 1, mean)
 coverage.quantile2 = apply(belong_quantile2, 1, mean)
-cat("the mean coverage of the normal CI is :",mean(coverage.normal2),"and ","the mean coverage of the quantile CI is :",mean(coverage.quantile2))
+cat("the mean coverage of the normal CI is :",mean(coverage.normal2))
+cat("the mean coverage of the quantile CI is:",mean(coverage.quantile2))
 
 ```
 
@@ -464,7 +490,9 @@ for (i in 1:500){
   y_muestras3[i,] = m(x)+epsilon
   x_m3[i,] = x
 }
+```
 
+```{r eval=FALSE}
 # Storage
 normal_ci_up3 = matrix(NA, nrow= M,ncol =  length(x_grid))
 normal_ci_low3 = matrix(NA, nrow= M,ncol =  length(x_grid))
@@ -500,10 +528,15 @@ for (i in 1:M) {
 ```
 
 ```{r}
-#normal_ci_low3 = readRDS("normal_ci_low3.RDS")
-#normal_ci_up3 = readRDS("normal_ci_up3.RDS")
-#quantile_ci_low3 = readRDS("quantile_ci_low3.RDS")
-#quantile_ci_up3 = readRDS("quantile_ci_low3.RDS")
+normal_ci_low3 = readRDS("normal_ci_low3.RDS")
+normal_ci_up3 = readRDS("normal_ci_up3.RDS")
+quantile_ci_low3 = readRDS("quantile_ci_low3.RDS")
+quantile_ci_up3 = readRDS("quantile_ci_low3.RDS")
+
+```
+
+```{r}
+
 
 belong_normal3 = matrix(NA,ncol = length(x_grid), nrow = M)
 belong_quantile3 = matrix(NA,ncol = length(x_grid), nrow = M)
@@ -539,9 +572,6 @@ When you increase the number in the n the covarege increase almost 5\% in each t
 ci_normal_result %>% saveRDS("ci_normal_result.RDS")
 ci_normal_result2 %>% saveRDS("ci_normal_result2.RDS")
 ci_normal_result3 %>% saveRDS("ci_normal_result3.RDS")
-m_hat_normal %>% saveRDS("m_hat_normal.RDS")
-m_hat_normal2 %>% saveRDS("m_hat_normal2.RDS")
-m_hat_normal3 %>% saveRDS("m_hat_normal3.RDS")
 m_hat_quantile %>% saveRDS("m_hat_quantile.RDS")
 m_hat_quantile2 %>% saveRDS("m_hat_quantile2.RDS")
 m_hat_quantile3 %>% saveRDS("m_hat_quantile3.RDS")
