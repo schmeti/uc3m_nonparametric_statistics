@@ -149,8 +149,6 @@ simulate_pvalues <- function(mu_samp=0, sd_samp=1 , M, n, alpha, dist = "normal"
        ylab = "p-value")
   abline(h = 1, col = "red")
 }
-
-
 ```
 
 With the function in place, we can now simulate the p-values for the three tests for samples drawn from a normal distribution $N(0,1)$ for different sample sizes $n$ and significance levels $\alpha$. With the sample drawn from a normal distribution, we expect the three test to overwhelmingly not reject the null Hypothesis $H\in F_N$ and the distribution of the p-Values to be a Uniform $U(0,1)$. In fact, for both $n=25$ and $n=100$ and as well as $\alpha=0.05$ and $\alpha=0.1$, theses expectations are met, with the rejection rates corresponding to the chosen significance levels.
@@ -169,17 +167,19 @@ Performing the test for a sample drawn from a normal distribution $(\mu,\sigma)$
 
 ```{r}
 # H0 False
+set.seed(123)
 simulate_pvalues(mu_samp = 0.25, sd_samp = 1, M = 1000, n = 25, alpha = 0.05)
 simulate_pvalues(mu_samp = 0.25, sd_samp = 1, M = 1000, n = 50, alpha = 0.05)
 simulate_pvalues(mu_samp = 0.50, sd_samp = 1, M = 1000, n = 25, alpha = 0.05)
 ```
-As last experiment, we now draw the samples from a t-students distribution with $\mu = 0$ and $df = 10$. Like before, we expect rejection rates to be high as the null hypothesis $H_0: F = F_N$ is false. This is inline with the results, with an additional observation that the rejection rate of the Anderson-Darling test is higher than those of the other two test. This can be explained with the emphasises of the Anderson-Darling test on the tails of the distribution, picking up better the different behaviors Normal and t-students distribution have at the tails.
+As last experiment, we now draw the samples from a t-students distribution with $\mu = 0$ and $df = 10$. Like before, we expect rejection rates to be high as the null hypothesis $H_0: F = F_N$ is false. However the results show that both Kolomogorov-Smirnov as well as Cramer von Mises appear not to have been able to pick up the subtle difference between the t-students and the Normal distribution, both with rejection rates close to that of the significance level and the p-values uniformly distributed. Compared to that, the  Anderson-Darling test shows a higher rejection rate and its p-value distributions already slightly shows the non-uniform behavior we expect from a false null hypothesis. This can be explained with its on the tails of the tested distribution, picking up better the subtle difference in behavior, the Normal and t-students distribution have at the tails.
 
-TODO: Why are distributions Uniform ?????????????????????????????????????
 
 ```{r}
-simulate_pvalues(mu_samp = 0,M = 1000, n = 50, alpha = 0.5, dist = "t-students")
+set.seed(123)
+test = simulate_pvalues(mu_samp = 0,M = 1000, n = 50, alpha = 0.05, dist = "t-students")
 ```
+
 This difference in the tails can be seen by comparing both distributions as done in the plot below.
 
 
@@ -204,3 +204,4 @@ ggplot(df, aes(x)) +
 
 ```
 
+We thus conclude that overall, the Anderson-Darling and Cramer von Mieses test appear to be more powerfull, with the Cramer von Miese test specifically suited for comparing distributions with differences in the tails.
